@@ -25,7 +25,10 @@ namespace weaponsandwizardry
             await client.LoginAsync(TokenType.Bot, ProgramConfigurations.GetProgramConfiguration("DISCORD_BOT_TOKEN"));
             await client.StartAsync();
 
+            // Set game status message.
             await client.SetGameAsync(ProgramConfigurations.GetProgramConfiguration("GAME_STATUS"));
+
+
 
             // Sleep the main thread of execution forever.
             await Task.Delay(-1);
