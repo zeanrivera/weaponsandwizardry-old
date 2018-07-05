@@ -8,19 +8,20 @@ namespace weaponsandwizardry
 {
     public static class ProgramLogger
     {
-        public static async Task LogAsync(LogMessage log)
+        public static Task Log(LogMessage log)
         {
-            await LogAsync(log.ToString());
+            return Log(log.ToString());
         }
 
-        public static async Task LogAsync(Exception e)
+        public static Task Log(Exception e)
         {
-            await LogAsync(e.ToString());
+            return Log(e.ToString());
         }
 
-        public static async Task LogAsync(string log)
+        public static Task Log(string log)
         {
-            await Task.Run(() => Console.WriteLine(log.ToString()));
+            Task.Run(() => Console.WriteLine(log.ToString()));
+            return Task.CompletedTask;
         }
     }
 }

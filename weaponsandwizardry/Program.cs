@@ -18,8 +18,8 @@ namespace weaponsandwizardry
             DiscordSocketClient client = services.GetRequiredService<DiscordSocketClient>();
 
             // Register Logging
-            client.Log += ProgramLogger.LogAsync;
-            services.GetRequiredService<CommandService>().Log += ProgramLogger.LogAsync;
+            client.Log += ProgramLogger.Log;
+            services.GetRequiredService<CommandService>().Log += ProgramLogger.Log;
 
             // Login Bot.
             await client.LoginAsync(TokenType.Bot, ProgramConfigurations.GetProgramConfiguration("DISCORD_BOT_TOKEN"));
