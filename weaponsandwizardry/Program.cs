@@ -1,45 +1,69 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
+using weaponsandwizardry.Services;
 
 namespace weaponsandwizardry
 {
     class Program
     {
-        static void Main(string[] args)
-            => new Program().MainAsync(args).GetAwaiter().GetResult();
+        public static readonly string CONFIGURATION_FILENAME = "_configuration.json";
 
-        public async Task MainAsync(string[] args)
+        public static void Main(string[] args)
         {
-            IServiceProvider services = ConfigureServices();
-            DiscordSocketClient client = services.GetRequiredService<DiscordSocketClient>();
+            new Program().MainAsync().GetAwaiter().GetResult();
+        }
 
-            // Register Logging
-            client.Log += ProgramLogger.Log;
-            services.GetRequiredService<CommandService>().Log += ProgramLogger.Log;
+        public async Task MainAsync()
+        {
+            IConfigurationRoot configuration = BuildConfiguration();
+            ServiceCollection services = BuildServiceCollection(configuration);
+            await StartServices(services);
 
-            // Login Bot.
-            await client.LoginAsync(TokenType.Bot, ProgramConfigurations.GetProgramConfiguration("DISCORD_BOT_TOKEN"));
-            await client.StartAsync();
-
-            // Set game status message.
-            await client.SetGameAsync(ProgramConfigurations.GetProgramConfiguration("GAME_STATUS"));
-
-
-
-            // Sleep the main thread of execution forever.
+            // Delay the main thread of execution forever.
             await Task.Delay(-1);
         }
 
-        private IServiceProvider ConfigureServices()
+        private IConfigurationRoot BuildConfiguration()
         {
-            return new ServiceCollection()
-                .AddSingleton<DiscordSocketClient>()
-                .AddSingleton<CommandService>()
-                .BuildServiceProvider();
+            IConfigurationBuilder builder = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile(Program.CONFIGURATION_FILENAME);
+            IConfigurationRoot configuration = builder.Build();
+            return configuration;
+        }
+
+        private ServiceCollection BuildServiceCollection(IConfigurationRoot configuration)
+        {
+            ServiceCollection services = new ServiceCollection();
+
+            services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+            {                                       
+                LogLevel = LogSeverity.Verbose,     
+                MessageCacheSize = 1000             
+            }))
+            .AddSingleton(new CommandService(new CommandServiceConfig
+            {                                       
+                LogLevel = LogSeverity.Verbose,     
+                DefaultRunMode = RunMode.Async,     
+                CaseSensitiveCommands = false
+            }))
+            .AddSingleton<StartupService>()
+            .AddSingleton<LoggingService>()
+            .AddSingleton(configuration);
+
+            return services;
+        }
+
+        private async Task StartServices(ServiceCollection services)
+        {
+            ServiceProvider provider = services.BuildServiceProvider();
+            await provider.GetRequiredService<LoggingService>();
+            await provider.GetRequiredService<StartupService>().StartAsync();
         }
     }
 }
